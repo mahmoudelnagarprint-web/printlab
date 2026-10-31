@@ -1,122 +1,127 @@
 <UserControl x:Class="ElnagarPrint.RIP.UI.Views.TabMainView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:models="clr-namespace:ElnagarPrint.RIP.UI.Models">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="16,12">
+             FlowDirection="RightToLeft">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid Margin="18,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-            <!-- ══ مقاس الورق والمصدر ══ -->
-            <Border Style="{StaticResource CardBorderStyle}">
-                <StackPanel>
-                    <TextBlock Text="📄 الورق" Style="{StaticResource SectionHeaderStyle}"/>
+            <!-- العمود الأيمن: إعدادات الورق والجودة -->
+            <StackPanel Grid.Column="0">
+                <Border Style="{StaticResource CardBorderStyle}" Padding="16">
+                    <StackPanel>
+                        <TextBlock Text="📄  الورق والإخراج" Style="{StaticResource SectionHeaderStyle}" Margin="0,0,0,12"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="105"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="مقاس الورق" VerticalAlignment="Center"/>
+                            <ComboBox Grid.Column="1" SelectedIndex="{Binding PaperSize, Converter={StaticResource EnumIndexConverter}}">
+                                <ComboBoxItem Content="A4"/>
+                                <ComboBoxItem Content="A5"/>
+                                <ComboBoxItem Content="A3"/>
+                                <ComboBoxItem Content="A3+"/>
+                                <ComboBoxItem Content="Letter"/>
+                                <ComboBoxItem Content="Legal"/>
+                                <ComboBoxItem Content="رول 100mm"/>
+                                <ComboBoxItem Content="رول 210mm"/>
+                                <ComboBoxItem Content="مخصص"/>
+                            </ComboBox>
+                            <TextBlock Grid.Row="1" Text="مصدر الورق" VerticalAlignment="Center" Margin="0,12,0,0"/>
+                            <ComboBox Grid.Row="1" Grid.Column="1" SelectedIndex="{Binding PaperSource, Converter={StaticResource EnumIndexConverter}}" Margin="0,12,0,0">
+                                <ComboBoxItem Content="الدرج الخلفي"/>
+                                <ComboBoxItem Content="الكاسيت"/>
+                                <ComboBoxItem Content="رول"/>
+                                <ComboBoxItem Content="يدوي"/>
+                            </ComboBox>
+                        </Grid>
+                        <CheckBox Content="طباعة بلا حواف  ·  Borderless"
+                                  IsChecked="{Binding Borderless}" Margin="0,16,0,0"/>
+                    </StackPanel>
+                </Border>
 
-                    <Grid Margin="0,4">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
+                <Border Style="{StaticResource CardBorderStyle}" Padding="16">
+                    <StackPanel>
+                        <Grid>
+                            <TextBlock Text="⚙  جودة الطباعة" Style="{StaticResource SectionHeaderStyle}" Margin="0"/>
+                            <TextBlock Text="{Binding QualityDescription}" HorizontalAlignment="Left"
+                                       Foreground="{StaticResource GoldAccentBrush}" FontSize="12"/>
+                        </Grid>
+                        <Slider Minimum="1" Maximum="7" Value="{Binding QualityLevel}"
+                                IsSnapToTickEnabled="True" TickFrequency="1" Margin="0,14,0,0"/>
+                        <Grid Margin="0,4,0,0">
+                            <TextBlock Text="1  سريع" FontSize="10" Foreground="{StaticResource TextMutedBrush}"/>
+                            <TextBlock Text="7  أعلى جودة" FontSize="10" HorizontalAlignment="Left" Foreground="{StaticResource TextMutedBrush}"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
 
-                        <TextBlock Text="مقاس الورق:" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Column="1" SelectedIndex="{Binding PaperSize, Converter={StaticResource EnumIndexConverter}}" Margin="0,0,12,0">
-                            <ComboBoxItem Content="A4"/>
-                            <ComboBoxItem Content="A5"/>
-                            <ComboBoxItem Content="A3"/>
-                            <ComboBoxItem Content="A3+"/>
-                            <ComboBoxItem Content="Letter"/>
-                            <ComboBoxItem Content="Legal"/>
-                            <ComboBoxItem Content="رول 100mm"/>
-                            <ComboBoxItem Content="رول 210mm"/>
-                            <ComboBoxItem Content="مخصص"/>
-                        </ComboBox>
+            <!-- العمود الأيسر: السلايدرات الأكثر استخدامًا -->
+            <StackPanel Grid.Column="2">
+                <Border Style="{StaticResource CardBorderStyle}" Padding="16">
+                    <StackPanel>
+                        <TextBlock Text="🎛  ضبط الصورة السريع" Style="{StaticResource SectionHeaderStyle}" Margin="0,0,0,4"/>
+                        <TextBlock Text="غيّر الإعدادات الأساسية قبل المعاينة أو الطباعة"
+                                   Foreground="{StaticResource TextMutedBrush}" FontSize="11" Margin="0,0,0,14"/>
 
-                        <TextBlock Grid.Column="2" Text="مصدر الورق:" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Column="3" SelectedIndex="{Binding PaperSource, Converter={StaticResource EnumIndexConverter}}">
-                            <ComboBoxItem Content="الدرج الخلفي"/>
-                            <ComboBoxItem Content="الكاسيت"/>
-                            <ComboBoxItem Content="رول"/>
-                            <ComboBoxItem Content="يدوي"/>
-                        </ComboBox>
-                    </Grid>
+                        <Grid Margin="0,4">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="82"/><ColumnDefinition Width="*"/><ColumnDefinition Width="54"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="الكثافة" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="2" Value="{Binding Density}" TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                            <TextBlock Grid.Column="2" Text="{Binding Density, StringFormat={}{0:P0}}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource GoldAccentBrush}"/>
+                        </Grid>
+                        <Grid Margin="0,10,0,4">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="82"/><ColumnDefinition Width="*"/><ColumnDefinition Width="54"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="السطوع" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="2" Value="{Binding Brightness}" TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                            <TextBlock Grid.Column="2" Text="{Binding Brightness, StringFormat={}{0:P0}}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource GoldAccentBrush}"/>
+                        </Grid>
+                        <Grid Margin="0,4">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="82"/><ColumnDefinition Width="*"/><ColumnDefinition Width="54"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="التباين" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="2" Value="{Binding Contrast}" TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                            <TextBlock Grid.Column="2" Text="{Binding Contrast, StringFormat={}{0:P0}}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource GoldAccentBrush}"/>
+                        </Grid>
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="82"/><ColumnDefinition Width="*"/><ColumnDefinition Width="54"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="التشبع" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="2" Value="{Binding Saturation}" TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                            <TextBlock Grid.Column="2" Text="{Binding Saturation, StringFormat={}{0:P0}}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource GoldAccentBrush}"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
 
-                    <CheckBox Content="طباعة بلا حواف (Borderless)"
-                              IsChecked="{Binding Borderless}"
-                              Margin="0,10,0,0"/>
-                </StackPanel>
-            </Border>
-
-            <!-- ══ مستوى الجودة ══ -->
-            <Border Style="{StaticResource CardBorderStyle}">
-                <StackPanel>
-                    <Grid>
-                        <TextBlock Text="⚙ مستوى الجودة" Style="{StaticResource SectionHeaderStyle}"/>
-                        <TextBlock Text="{Binding QualityDescription}"
-                                   HorizontalAlignment="Right"
-                                   Foreground="{StaticResource GoldAccentBrush}"
-                                   FontSize="12"/>
-                    </Grid>
-
-                    <Slider Minimum="1" Maximum="7"
-                            Value="{Binding QualityLevel}"
-                            IsSnapToTickEnabled="True" TickFrequency="1"
-                            TickPlacement="BottomRight"/>
-                    <Grid>
-                        <TextBlock Text="1 — سريع" FontSize="10" Foreground="{StaticResource TextMutedBrush}"/>
-                        <TextBlock Text="7 — أقصى" FontSize="10" HorizontalAlignment="Right" Foreground="{StaticResource TextMutedBrush}"/>
-                    </Grid>
-                </StackPanel>
-            </Border>
-
-            <!-- ══ السطوع والتباين والكثافة ══ -->
-            <Border Style="{StaticResource CardBorderStyle}">
-                <StackPanel>
-                    <TextBlock Text="🎛 ضبط الصورة الأساسي" Style="{StaticResource SectionHeaderStyle}"/>
-
-                    <Grid Margin="0,2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="90"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="60"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="السطوع:" VerticalAlignment="Center"/>
-                        <Slider Grid.Column="1" Minimum="0" Maximum="2"
-                                Value="{Binding Brightness}"
-                                TickFrequency="0.05" IsSnapToTickEnabled="True"/>
-                        <TextBlock Grid.Column="2" Text="{Binding Brightness, StringFormat={}{0:P0}}"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Grid>
-
-                    <Grid Margin="0,2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="90"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="60"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="التباين:" VerticalAlignment="Center"/>
-                        <Slider Grid.Column="1" Minimum="0" Maximum="2"
-                                Value="{Binding Contrast}"
-                                TickFrequency="0.05" IsSnapToTickEnabled="True"/>
-                        <TextBlock Grid.Column="2" Text="{Binding Contrast, StringFormat={}{0:P0}}"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Grid>
-
-                    <Grid Margin="0,2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="90"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="60"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="الكثافة:" VerticalAlignment="Center"/>
-                        <Slider Grid.Column="1" Minimum="0" Maximum="2"
-                                Value="{Binding Density}"
-                                TickFrequency="0.05" IsSnapToTickEnabled="True"/>
-                        <TextBlock Grid.Column="2" Text="{Binding Density, StringFormat={}{0:P0}}"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Grid>
-                </StackPanel>
-            </Border>
-
-        </StackPanel>
+                <Border Style="{StaticResource CardBorderStyle}" Padding="16" BorderBrush="{StaticResource BorderGoldBrush}">
+                    <StackPanel>
+                        <Grid>
+                            <TextBlock Text="✦  القنوات الفاتحة" Style="{StaticResource SectionHeaderStyle}" Margin="0"/>
+                            <TextBlock Text="CMYKcc" HorizontalAlignment="Left" Foreground="{StaticResource TextMutedBrush}" FontSize="11"/>
+                        </Grid>
+                        <TextBlock Text="يمكن التحكم التفصيلي والقفل من تبويب الحبر"
+                                   Foreground="{StaticResource TextMutedBrush}" FontSize="11" Margin="0,6,0,12"/>
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="9" Height="9" Fill="{StaticResource CyanAccentBrush}" Margin="0,0,6,0"/>
+                            <TextBlock Text="Light Cyan  Lc"/>
+                            <TextBlock Text=" · متاح من تبويب الحبر" Foreground="{StaticResource TextMutedBrush}" Margin="5,0,0,0"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,9,0,0">
+                            <Ellipse Width="9" Height="9" Fill="{StaticResource MagentaAccentBrush}" Margin="0,0,6,0"/>
+                            <TextBlock Text="Light Magenta  Lm"/>
+                            <TextBlock Text=" · متاح من تبويب الحبر" Foreground="{StaticResource TextMutedBrush}" Margin="5,0,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
     </ScrollViewer>
 </UserControl>
