@@ -1,0 +1,184 @@
+<UserControl x:Class="ElnagarPrint.RIP.UI.Views.TabInkCtrlView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="16,12">
+
+            <!-- ══ التحكم بالأسود UCR ══ -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Text="⬛ التحكم بالأسود (UCR / Black Level)" Style="{StaticResource SectionHeaderStyle}"/>
+
+                    <Grid Margin="0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="64"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="مستوى الأسود:" VerticalAlignment="Center"/>
+                        <Slider Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding BlackLevel}"
+                                TickFrequency="5" IsSnapToTickEnabled="True"/>
+                        <TextBox Grid.Column="2" Text="{Binding BlackLevel, UpdateSourceTrigger=PropertyChanged}"
+                                 TextAlignment="Center" Margin="6,0,0,0"/>
+                    </Grid>
+
+                    <TextBlock Text="• 0% = لا أسود (CMY فقط) • 100% = أقصى استبدال للأسود مكان CMY"
+                               FontSize="10.5" Foreground="{StaticResource TextMutedBrush}" Margin="0,6,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- ══ حدود الحبر ══ -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Text="🧪 حدود الحبر (Ink Limits)" Style="{StaticResource SectionHeaderStyle}"/>
+
+                    <!-- الحد الإجمالي -->
+                    <Grid Margin="0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="64"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="الحد الإجمالي:" VerticalAlignment="Center" FontWeight="Bold"
+                                   Foreground="{StaticResource GoldAccentBrush}"/>
+                        <Slider Grid.Column="1" Minimum="100" Maximum="400" Value="{Binding TotalInkLimit}"
+                                TickFrequency="10" IsSnapToTickEnabled="True"/>
+                        <TextBox Grid.Column="2" Text="{Binding TotalInkLimit, UpdateSourceTrigger=PropertyChanged}"
+                                 TextAlignment="Center" Margin="6,0,0,0"/>
+                    </Grid>
+
+                    <Separator Background="{StaticResource BorderDarkBrush}" Margin="0,8"/>
+
+                    <!-- الحدود الفردية -->
+                    <Grid Margin="0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="64"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="حد Cyan:" VerticalAlignment="Center"/>
+                        <Slider Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding CyanInkLimit}"
+                                TickFrequency="5" IsSnapToTickEnabled="True"/>
+                        <TextBox Grid.Column="2" Text="{Binding CyanInkLimit, UpdateSourceTrigger=PropertyChanged}"
+                                 TextAlignment="Center" Margin="6,0,0,0"/>
+                    </Grid>
+
+                    <Grid Margin="0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="64"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="حد Magenta:" VerticalAlignment="Center"/>
+                        <Slider Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding MagentaInkLimit}"
+                                TickFrequency="5" IsSnapToTickEnabled="True"/>
+                        <TextBox Grid.Column="2" Text="{Binding MagentaInkLimit, UpdateSourceTrigger=PropertyChanged}"
+                                 TextAlignment="Center" Margin="6,0,0,0"/>
+                    </Grid>
+
+                    <Grid Margin="0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="64"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="حد Yellow:" VerticalAlignment="Center"/>
+                        <Slider Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding YellowInkLimit}"
+                                TickFrequency="5" IsSnapToTickEnabled="True"/>
+                        <TextBox Grid.Column="2" Text="{Binding YellowInkLimit, UpdateSourceTrigger=PropertyChanged}"
+                                 TextAlignment="Center" Margin="6,0,0,0"/>
+                    </Grid>
+
+                    <Grid Margin="0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="64"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="حد Black:" VerticalAlignment="Center"/>
+                        <Slider Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding BlackInkLimit}"
+                                TickFrequency="5" IsSnapToTickEnabled="True"/>
+                        <TextBox Grid.Column="2" Text="{Binding BlackInkLimit, UpdateSourceTrigger=PropertyChanged}"
+                                 TextAlignment="Center" Margin="6,0,0,0"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- ══ التحكم الفرعي في الألوان الفاتحة Lc/Lm — قفل حقيقي + نسبة ══ -->
+            <Border Style="{StaticResource CardBorderStyle}"
+                    BorderBrush="{StaticResource BorderGoldBrush}">
+                <StackPanel>
+                    <TextBlock Text="🎨 التحكم الفرعي في الألوان الفاتحة (Light Cyan / Light Magenta)"
+                               Style="{StaticResource SectionHeaderStyle}"/>
+                    <TextBlock Text="القفل = إطفاء كلي للقناة عند المحرك (حبر = 0 فعليًا) • النسبة = تخفيف التدرجات الفاتحة"
+                               FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,8"/>
+
+                    <!-- صف Light Cyan -->
+                    <Grid Margin="0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="64"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="64"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="💧 Light Cyan" VerticalAlignment="Center"
+                                   Foreground="{StaticResource CyanAccentBrush}"/>
+                        <CheckBox Grid.Column="1" Content="قفل 🔒" VerticalAlignment="Center"
+                                  FontSize="11" Margin="8,0,0,0"
+                                  IsChecked="{Binding LockLightCyan}"/>
+                        <Slider Grid.Column="2" Minimum="0" Maximum="100" Value="{Binding LcInkPercent}"
+                                TickFrequency="5" IsSnapToTickEnabled="True"
+                                IsEnabled="{Binding Path=LockLightCyan, Converter={StaticResource InverseBoolConverter}}"/>
+                        <TextBox Grid.Column="3" Text="{Binding LcInkPercent, UpdateSourceTrigger=PropertyChanged}"
+                                 TextAlignment="Center" Margin="6,0,0,0"/>
+                    </Grid>
+
+                    <!-- صف Light Magenta -->
+                    <Grid Margin="0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="64"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="64"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="🌸 Light Magenta" VerticalAlignment="Center"
+                                   Foreground="{StaticResource MagentaAccentBrush}"/>
+                        <CheckBox Grid.Column="1" Content="قفل 🔒" VerticalAlignment="Center"
+                                  FontSize="11" Margin="8,0,0,0"
+                                  IsChecked="{Binding LockLightMagenta}"/>
+                        <Slider Grid.Column="2" Minimum="0" Maximum="100" Value="{Binding LmInkPercent}"
+                                TickFrequency="5" IsSnapToTickEnabled="True"
+                                IsEnabled="{Binding Path=LockLightMagenta, Converter={StaticResource InverseBoolConverter}}"/>
+                        <TextBox Grid.Column="3" Text="{Binding LmInkPercent, UpdateSourceTrigger=PropertyChanged}"
+                                 TextAlignment="Center" Margin="6,0,0,0"/>
+                    </Grid>
+
+                    <Separator Background="{StaticResource BorderDarkBrush}" Margin="0,8"/>
+
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="⚡ قفل Lm/Lc فورًا"
+                                Style="{StaticResource GoldButtonStyle}"
+                                Click="ZeroLightInks_Click"/>
+
+                        <Button Content="↩ إرجاع 100% وفك القفل"
+                                Style="{StaticResource DarkButtonStyle}"
+                                Margin="10,0,0,0"
+                                Click="RestoreLightInks_Click"/>
+
+                        <Button Content="عرض حالة القنوات"
+                                Style="{StaticResource DarkButtonStyle}"
+                                Margin="10,0,0,0"
+                                Click="ShowGates_Click"/>
+                    </StackPanel>
+
+                    <TextBlock x:Name="GatesStatusText"
+                               Text="حالة الـ Gates: Lc=100% | Lm=0%"
+                               FontSize="11" FontFamily="Consolas"
+                               Foreground="{StaticResource SuccessGreenBrush}"
+                               Margin="0,10,0,0"/>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

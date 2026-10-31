@@ -1,0 +1,91 @@
+<UserControl x:Class="ElnagarPrint.RIP.UI.Views.TabLayoutView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="16,12">
+
+            <!-- ══ الاتجاه ══ -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Text="📐 الاتجاه" Style="{StaticResource SectionHeaderStyle}"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,4">
+                        <RadioButton Content="عمودي (Portrait)"
+                                     IsChecked="{Binding Orientation, Converter={StaticResource EnumEqualConverter}, ConverterParameter=Portrait}"
+                                     GroupName="Orientation"/>
+                        <RadioButton Content="أفقي (Landscape)"
+                                     IsChecked="{Binding Orientation, Converter={StaticResource EnumEqualConverter}, ConverterParameter=Landscape}"
+                                     GroupName="Orientation"
+                                     Margin="30,0,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ══ الطباعة على الوجهين ══ -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Text="📚 الطباعة على الوجهين (Duplex)" Style="{StaticResource SectionHeaderStyle}"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,4">
+                        <RadioButton Content="وجه واحد"
+                                     GroupName="Duplex"
+                                     IsChecked="{Binding Duplex, Converter={StaticResource EnumEqualConverter}, ConverterParameter=OneSided}"/>
+                        <RadioButton Content="وجهان — الحافة الطويلة"
+                                     GroupName="Duplex"
+                                     IsChecked="{Binding Duplex, Converter={StaticResource EnumEqualConverter}, ConverterParameter=TwoSidedLong}"
+                                     Margin="20,0,0,0"/>
+                        <RadioButton Content="وجهان — الحافة القصيرة"
+                                     GroupName="Duplex"
+                                     IsChecked="{Binding Duplex, Converter={StaticResource EnumEqualConverter}, ConverterParameter=TwoSidedShort}"
+                                     Margin="20,0,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ══ عدد النسخ و N-up ══ -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Text="🔢 النسخ والتخطيط" Style="{StaticResource SectionHeaderStyle}"/>
+
+                    <Grid Margin="0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="عدد النسخ:" VerticalAlignment="Center"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button Content="−" Width="28" Height="26" Style="{StaticResource DarkButtonStyle}"
+                                    Click="CopiesMinus_Click"/>
+                            <TextBox Text="{Binding Copies}" Width="50" TextAlignment="Center" Margin="6,0"/>
+                            <Button Content="+" Width="28" Height="26" Style="{StaticResource DarkButtonStyle}"
+                                    Click="CopiesPlus_Click"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Margin="0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="N-up (صفحات/ورقة):" VerticalAlignment="Center"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <RadioButton Content="1"  GroupName="NUp" Margin="0,0,12,0"
+                                         IsChecked="{Binding NUp, Converter={StaticResource EnumEqualConverter}, ConverterParameter=One}"/>
+                            <RadioButton Content="2"  GroupName="NUp" Margin="0,0,12,0"
+                                         IsChecked="{Binding NUp, Converter={StaticResource EnumEqualConverter}, ConverterParameter=Two}"/>
+                            <RadioButton Content="4"  GroupName="NUp" Margin="0,0,12,0"
+                                         IsChecked="{Binding NUp, Converter={StaticResource EnumEqualConverter}, ConverterParameter=Four}"/>
+                            <RadioButton Content="9"  GroupName="NUp" Margin="0,0,12,0"
+                                         IsChecked="{Binding NUp, Converter={StaticResource EnumEqualConverter}, ConverterParameter=Nine}"/>
+                            <RadioButton Content="16" GroupName="NUp"
+                                         IsChecked="{Binding NUp, Converter={StaticResource EnumEqualConverter}, ConverterParameter=Sixteen}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <CheckBox Content="وضع الكتيب (Brochure)"
+                              IsChecked="{Binding Brochure}"
+                              Margin="0,10,0,0"/>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

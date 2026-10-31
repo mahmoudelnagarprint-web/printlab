@@ -1,0 +1,425 @@
+<Application x:Class="ElnagarPrint.RIP.UI.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:ElnagarPrint.RIP.UI.Converters"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <!--  محوّلات الربط (Converters)                                    -->
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <conv:EnumEqualConverter x:Key="EnumEqualConverter"/>
+            <conv:EnumIndexConverter x:Key="EnumIndexConverter"/>
+            <conv:InverseBoolConverter x:Key="InverseBoolConverter"/>
+
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <!--  ألوان الثيم الأسود الملكي — Royal Dark Theme               -->
+            <!-- ══════════════════════════════════════════════════════════════ -->
+
+            <!-- الألوان الأساسية -->
+            <Color x:Key="BackgroundDark">#0D0D0D</Color>
+            <Color x:Key="BackgroundCard">#1A1A1A</Color>
+            <Color x:Key="BackgroundPanel">#141414</Color>
+            <Color x:Key="BorderDark">#2A2A2A</Color>
+            <Color x:Key="BorderGold">#8B6914</Color>
+            <Color x:Key="GoldAccent">#D4AF37</Color>
+            <Color x:Key="GoldBright">#FFD700</Color>
+            <Color x:Key="TextPrimary">#F5F5F5</Color>
+            <Color x:Key="TextSecondary">#AAAAAA</Color>
+            <Color x:Key="TextMuted">#666666</Color>
+            <Color x:Key="CyanAccent">#00BCD4</Color>
+            <Color x:Key="MagentaAccent">#E91E63</Color>
+            <Color x:Key="SuccessGreen">#4CAF50</Color>
+            <Color x:Key="ErrorRed">#F44336</Color>
+            <Color x:Key="WarningOrange">#FF9800</Color>
+
+            <!-- Solid brushes -->
+            <SolidColorBrush x:Key="BackgroundDarkBrush"   Color="{StaticResource BackgroundDark}"/>
+            <SolidColorBrush x:Key="BackgroundCardBrush"  Color="{StaticResource BackgroundCard}"/>
+            <SolidColorBrush x:Key="BackgroundPanelBrush" Color="{StaticResource BackgroundPanel}"/>
+            <SolidColorBrush x:Key="BorderDarkBrush"     Color="{StaticResource BorderDark}"/>
+            <SolidColorBrush x:Key="BorderGoldBrush"     Color="{StaticResource BorderGold}"/>
+            <SolidColorBrush x:Key="GoldAccentBrush"     Color="{StaticResource GoldAccent}"/>
+            <SolidColorBrush x:Key="GoldBrightBrush"     Color="{StaticResource GoldBright}"/>
+            <SolidColorBrush x:Key="TextPrimaryBrush"    Color="{StaticResource TextPrimary}"/>
+            <SolidColorBrush x:Key="TextSecondaryBrush"  Color="{StaticResource TextSecondary}"/>
+            <SolidColorBrush x:Key="TextMutedBrush"     Color="{StaticResource TextMuted}"/>
+            <SolidColorBrush x:Key="CyanAccentBrush"    Color="{StaticResource CyanAccent}"/>
+            <SolidColorBrush x:Key="MagentaAccentBrush" Color="{StaticResource MagentaAccent}"/>
+            <SolidColorBrush x:Key="SuccessGreenBrush"  Color="{StaticResource SuccessGreen}"/>
+            <SolidColorBrush x:Key="ErrorRedBrush"      Color="{StaticResource ErrorRed}"/>
+            <SolidColorBrush x:Key="WarningOrangeBrush" Color="{StaticResource WarningOrange}"/>
+
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <!--  Window Style                                                   -->
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <Style x:Key="RoyalWindowStyle" TargetType="Window">
+                <Setter Property="Background" Value="{StaticResource BackgroundDarkBrush}"/>
+                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                <Setter Property="FontFamily" Value="Segoe UI"/>
+                <Setter Property="FontSize" Value="13"/>
+            </Style>
+
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <!--  TabControl — Dark Royal Style                                 -->
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <Style TargetType="TabControl">
+                <Setter Property="Background" Value="{StaticResource BackgroundDarkBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource BorderGoldBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Padding" Value="0"/>
+            </Style>
+
+            <Style TargetType="TabItem">
+                <Setter Property="Background" Value="{StaticResource BackgroundCardBrush}"/>
+                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Padding" Value="18,8"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TabItem">
+                            <Border x:Name="Border"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{StaticResource BorderGoldBrush}"
+                                    BorderThickness="0,0,0,2"
+                                    Padding="{TemplateBinding Padding}"
+                                    Margin="0,0,1,0"
+                                    Cursor="Hand">
+                                <ContentPresenter x:Name="ContentSite"
+                                                 ContentSource="Header"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="Border" Property="Background" Value="#1F1F1F"/>
+                                    <Setter Property="Foreground" Value="{StaticResource GoldBrightBrush}"/>
+                                    <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource GoldBrightBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Border" Property="Background" Value="#202020"/>
+                                    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <!--  Labels                                                        -->
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <Style TargetType="Label">
+                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                <Setter Property="FontFamily" Value="Segoe UI"/>
+                <Setter Property="FontSize" Value="12"/>
+            </Style>
+
+            <Style x:Key="GoldLabelStyle" TargetType="Label">
+                <Setter Property="Foreground" Value="{StaticResource GoldAccentBrush}"/>
+                <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+                <Setter Property="FontSize" Value="12"/>
+            </Style>
+
+            <Style x:Key="HeaderLabelStyle" TargetType="Label">
+                <Setter Property="Foreground" Value="{StaticResource GoldBrightBrush}"/>
+                <Setter Property="FontFamily" Value="Segoe UI Bold"/>
+                <Setter Property="FontSize" Value="15"/>
+            </Style>
+
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <!--  TextBlocks                                                    -->
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <Style TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                <Setter Property="FontFamily" Value="Segoe UI"/>
+                <Setter Property="FontSize" Value="12"/>
+            </Style>
+
+            <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{StaticResource GoldAccentBrush}"/>
+                <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Margin" Value="0,10,0,6"/>
+            </Style>
+
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <!--  TextBox                                                       -->
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <Style TargetType="TextBox">
+                <Setter Property="Background" Value="#111111"/>
+                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource BorderDarkBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Padding" Value="6,4"/>
+                <Setter Property="FontFamily" Value="Segoe UI"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="CaretBrush" Value="{StaticResource GoldAccentBrush}"/>
+                <Setter Property="SelectionBrush" Value="{StaticResource GoldAccentBrush}"/>
+                <Style.Triggers>
+                    <Trigger Property="IsFocused" Value="True">
+                        <Setter Property="BorderBrush" Value="{StaticResource GoldAccentBrush}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <!--  ComboBox (DropDownList)                                      -->
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <Style TargetType="ComboBox">
+                <Setter Property="Background" Value="#111111"/>
+                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource BorderDarkBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Padding" Value="6,4"/>
+                <Setter Property="FontFamily" Value="Segoe UI"/>
+                <Setter Property="FontSize" Value="12"/>
+            </Style>
+
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <!--  Buttons                                                       -->
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <Style x:Key="GoldButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="#8B6914"/>
+                <Setter Property="Foreground" Value="#F5F5F5"/>
+                <Setter Property="BorderBrush" Value="{StaticResource GoldAccentBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Padding" Value="16,8"/>
+                <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="border"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    Padding="{TemplateBinding Padding}"
+                                    CornerRadius="2">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="#D4AF37"/>
+                                    <Setter Property="Foreground" Value="#0D0D0D"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="#FFD700"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="border" Property="Background" Value="#2A2A2A"/>
+                                    <Setter Property="Foreground" Value="#555555"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="DarkButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="#1F1F1F"/>
+                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource BorderDarkBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Padding" Value="12,6"/>
+                <Setter Property="FontFamily" Value="Segoe UI"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="border"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    Padding="{TemplateBinding Padding}"
+                                    CornerRadius="2">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="#2A2A2A"/>
+                                    <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource GoldAccentBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="#333333"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Foreground" Value="#555555"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="DangerButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="#3A1010"/>
+                <Setter Property="Foreground" Value="{StaticResource ErrorRedBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource ErrorRedBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Padding" Value="12,6"/>
+                <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="border"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    Padding="{TemplateBinding Padding}"
+                                    CornerRadius="2">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="#5A1515"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <!--  Sliders                                                       -->
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <Style TargetType="Slider">
+                <Setter Property="Background" Value="{StaticResource BorderDarkBrush}"/>
+                <Setter Property="Foreground" Value="{StaticResource GoldAccentBrush}"/>
+                <Setter Property="Height" Value="20"/>
+                <Setter Property="Margin" Value="0,4"/>
+            </Style>
+
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <!--  CheckBox                                                     -->
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <Style TargetType="CheckBox">
+                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                <Setter Property="FontFamily" Value="Segoe UI"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="CheckBox">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border x:Name="checkBorder"
+                                        Width="16" Height="16"
+                                        Background="#111111"
+                                        BorderBrush="{StaticResource BorderDarkBrush}"
+                                        BorderThickness="1"
+                                        Margin="0,0,8,0">
+                                    <TextBlock x:Name="checkMark"
+                                               Text="✓"
+                                               Foreground="{StaticResource GoldBrightBrush}"
+                                               FontSize="11"
+                                               FontWeight="Bold"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Visibility="Collapsed"/>
+                                </Border>
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="checkMark" Property="Visibility" Value="Visible"/>
+                                    <Setter TargetName="checkBorder" Property="BorderBrush" Value="{StaticResource GoldAccentBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="checkBorder" Property="BorderBrush" Value="{StaticResource GoldAccentBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <!--  ProgressBar                                                  -->
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <Style TargetType="ProgressBar">
+                <Setter Property="Background" Value="#1F1F1F"/>
+                <Setter Property="Foreground" Value="{StaticResource GoldAccentBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource BorderDarkBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Height" Value="8"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ProgressBar">
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}">
+                                <Grid>
+                                    <Rectangle x:Name="PART_Track"/>
+                                    <Rectangle x:Name="PART_Indicator"
+                                               HorizontalAlignment="Left"
+                                               Fill="{TemplateBinding Foreground}"/>
+                                </Grid>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <!--  ScrollBar & ScrollViewer                                     -->
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <Style TargetType="ScrollBar">
+                <Setter Property="Background" Value="#111111"/>
+                <Setter Property="Foreground" Value="{StaticResource GoldAccentBrush}"/>
+                <Setter Property="Width" Value="10"/>
+            </Style>
+
+            <Style TargetType="ScrollViewer">
+                <Setter Property="Background" Value="Transparent"/>
+            </Style>
+
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <!--  Card / Group Border                                          -->
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <Style x:Key="CardBorderStyle" TargetType="Border">
+                <Setter Property="Background" Value="{StaticResource BackgroundCardBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource BorderDarkBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="CornerRadius" Value="4"/>
+                <Setter Property="Padding" Value="12"/>
+                <Setter Property="Margin" Value="0,0,0,8"/>
+            </Style>
+
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <!--  ListBox / ComboBox Item                                      -->
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <Style TargetType="ListBoxItem">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                <Setter Property="Padding" Value="8,4"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ListBoxItem">
+                            <Border x:Name="border"
+                                    Background="{TemplateBinding Background}"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="#2A2A1A"/>
+                                    <Setter Property="Foreground" Value="{StaticResource GoldBrightBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="#1F1F1F"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

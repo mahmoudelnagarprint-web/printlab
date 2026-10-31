@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>ElnagarPrint.RIP.UI</RootNamespace>
+    <AssemblyName>ElnagarPrint.RIP.UI</AssemblyName>
+    <Version>3.0.0</Version>
+    <Authors>النجار برنت</Authors>
+    <Product>ElnagarPrint RIP</Product>
+    <Description>Professional RIP UI for Epson L1800 — Stage 3</Description>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <!-- Reference to the Core Engine library -->
+  <ItemGroup>
+    <ProjectReference Include="..\ElnagarPrint.RIP.Core\ElnagarPrint.RIP.Core.csproj" />
+  </ItemGroup>
+
+</Project>

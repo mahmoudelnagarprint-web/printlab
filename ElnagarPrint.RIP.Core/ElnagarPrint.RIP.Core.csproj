@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>ElnagarPrint.RIP.Core</RootNamespace>
+    <AssemblyName>ElnagarPrint.RIP.Core</AssemblyName>
+    <Description>Core RIP Engine v2 — Color Engine + Parser + Ink Control</Description>
+    <Version>2.0.0</Version>
+    <Authors>النجار برنت</Authors>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <!--
+    Stage 1 Dependencies:
+    1. Magick.NET-Q16-AnyCPU — provides ImageMagick + LittleCMS (lcms2) for ICC transforms
+       Note: Magick.NET bundles lcms2 internally, so no separate lcms2 package needed.
+       If Magick.NET is unavailable, IccColorEngine falls back to pure-C# ICC parsing + matrix math.
+    2. System.Text.Json — for WorkshopPresets JSON serialization (built-in .NET 8)
+  -->
+  <ItemGroup>
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.*" />
+    <PackageReference Include="LibUsbDotNet" Version="2.2.8" />
+  </ItemGroup>
+
+</Project>
