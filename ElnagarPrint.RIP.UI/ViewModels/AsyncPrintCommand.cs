@@ -33,6 +33,7 @@ public class AsyncPrintCommand : ICommand
 
         var imagePath = _vm.CurrentImagePath!;
         var settings  = _vm.BuildPipelineSettings();
+        var cancellationToken = _cts.Token;
 
         try
         {
@@ -54,8 +55,8 @@ public class AsyncPrintCommand : ICommand
                     Report(pct, msg);
                 };
 
-                return pipeline.PrintImage(imagePath, autoOpenPrinter: true);
-            }, _cts.Token);
+                    return pipeline.PrintImage(imagePath, autoOpenPrinter: true, cancellationToken: cancellationToken);
+            }, cancellationToken);
 
             if (result.Success)
             {

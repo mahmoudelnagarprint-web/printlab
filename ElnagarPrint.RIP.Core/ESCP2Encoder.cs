@@ -14,37 +14,27 @@ namespace ElnagarPrint.RIP.Core
     public static class ESCP2
     {
         public const byte ESC = 0x1B;   // Escape
-        public const byte GS  = 0x1D;   // Group Separator
 
         // ── أوامر التهيئة ──
         /// <summary>ESC @ — تهيئة الطابعة (Reset)</summary>
         public static readonly byte[] CMD_RESET = { ESC, 0x40 };
 
-        /// <summary>ESC (t — اتجاه الطباعة: 0=Uni-dir, 1=Bi-dir</summary>
-        public static readonly byte[] CMD_PRINT_DIR = { ESC, 0x28, 0x74, 0x01, 0x00 };
+        /// <summary>ESC U — اتجاه الطباعة: 0=Bi-dir, 1=Uni-dir</summary>
+        public static byte[] CmdPrintDirection(bool unidirectional) =>
+            new byte[] { ESC, 0x55, (byte)(unidirectional ? 1 : 0) };
 
         // ── أوامر الدقة (Resolution) ──
-        /// <summary>ESC (U — ضبط الوحدة: 1/360"</summary>
-        public static readonly byte[] CMD_UNIT_360 = { ESC, 0x28, 0x55, 0x01, 0x01 };
+        /// <summary>ESC (U — وحدة القياس الأساسية لـ ESC/P2</summary>
+        public static readonly byte[] CMD_UNIT_360 = { ESC, 0x28, 0x55, 0x01, 0x00, 0x0A };
 
-        /// <summary>ESC (U — ضبط الوحدة: 1/720"</summary>
-        public static readonly byte[] CMD_UNIT_720 = { ESC, 0x28, 0x55, 0x01, 0x02 };
+        public static readonly byte[] CMD_UNIT_720 = { ESC, 0x28, 0x55, 0x01, 0x00, 0x05 };
 
-        // ── أوامر الـ Raster ──
-        /// <summary>GS v 0 — بدء طباعة الـ Raster (6 planes: K,C,M,Y,Lc,Lm)</summary>
-        public static readonly byte[] CMD_RASTER_START =
-            { GS, 0x76, 0x30, 0x00 };
+        // ── أوامر رسومات ESC/P2 ──
+        /// <summary>ESC (G — الدخول إلى Graphics Mode</summary>
+        public static readonly byte[] CMD_GRAPHICS_MODE = { ESC, 0x28, 0x47, 0x01, 0x00, 0x01 };
 
-        /// <summary>GS v 1 — إنهاء طباعة الـ Raster</summary>
-        public static readonly byte[] CMD_RASTER_END =
-            { GS, 0x76, 0x31 };
-
-        /// <summary>ESC * m — بدء خط raster
-        /// m=0: no compress, m=1: TIFF, m=33: auto compression</summary>
-        public static readonly byte CMD_RASTER_LINE = 0x2A; // '*'
-
-        /// <summary>ESC . — نهاية بيانات الـ raster للخط</summary>
-        public static readonly byte[] CMD_RASTER_EOD = { ESC, 0x2E };
+        /// <summary>ESC (i — تفعيل MicroWeave</summary>
+        public static readonly byte[] CMD_MICROWEAVE = { ESC, 0x28, 0x69, 0x01, 0x00, 0x01 };
 
         // ── أوامر تمرير الورق (Paper Feed) ──
         /// <summary>ESC (v — ضبط المسافة العمودية (line gap)</summary>
@@ -62,12 +52,8 @@ namespace ElnagarPrint.RIP.Core
         /// <summary>LF — سطر جديد (line feed)</summary>
         public const byte CMD_LINE_FEED = 0x0A;
 
-        // ── أوامر الـ Micro-weave (تداخل الخطوط) ──
-        /// <summary>GS ( W 1 — تفعيل الـ uni-directional print</summary>
-        public static readonly byte[] CMD_UNIDIR = { GS, 0x28, 0x57, 0x02, 0x01, 0x00 };
-
-        /// <summary>GS ( W 0 — تفعيل الـ bi-directional print</summary>
-        public static readonly byte[] CMD_BIDIR = { GS, 0x28, 0x57, 0x02, 0x00, 0x00 };
+        /// <summary>ESC (K — اختيار وضع الألوان: ZERO=0, GRAYMODE=0</summary>
+        public static readonly byte[] CMD_COLOR_MODE = { ESC, 0x28, 0x4B, 0x02, 0x00, 0x00 };
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -175,7 +161,7 @@ namespace ElnagarPrint.RIP.Core
     {
         private readonly EncoderSettings _settings;
 
-        // ترتيب Planes لأمر GS v 0 : K, C, M, Y, Lc, Lm
+        // ترتيب القنوات لكتل ESC i: K, C, M, Y, Lc, Lm
         private static readonly ChannelOrder[] PlaneOrderKCMYcc =
             new[] {
                 ChannelOrder.Black,
@@ -226,13 +212,11 @@ namespace ElnagarPrint.RIP.Core
             for (int row = 0; row < halftoneResult.Height; row++)
             {
                 // Micro-weave: لو مُفعّل، نغيّر اتجاه الخط
-                if (_settings.UseMicroWeave && row % 2 == 1)
-                    page.Append(ESCP2.CMD_UNIDIR);
+                if (_settings.UseMicroWeave)
+                    page.Append(ESCP2.CMD_MICROWEAVE);
 
                 AppendRasterLine(page, halftoneResult, planes, row);
 
-                if (_settings.UseMicroWeave && row % 2 == 1)
-                    page.Append(ESCP2.CMD_BIDIR);
             }
 
             // ── Phase 4: إنهاء الصفحة ──
@@ -255,9 +239,7 @@ namespace ElnagarPrint.RIP.Core
             // ① Reset
             page.Append(ESCP2.CMD_RESET);
             // ② Set print direction (bi/uni)
-            var dirCmd = _settings.BiDirectional
-                ? ESCP2.CMD_BIDIR : ESCP2.CMD_UNIDIR;
-            page.Append(dirCmd);
+            page.Append(ESCP2.CmdPrintDirection(!_settings.BiDirectional));
             // ③ Set resolution unit
             switch (_settings.Resolution)
             {
@@ -270,8 +252,8 @@ namespace ElnagarPrint.RIP.Core
             }
             // ④ Line gap
             page.Append(ESCP2.CmdSetLineGap(_settings.LineGap));
-            // ⑤ Select ink set (6-color for L1800)
-            AppendSelectInkSet(page);
+            // ⑤ Select color graphics mode (the actual channel is carried by ESC i)
+            page.Append(ESCP2.CMD_COLOR_MODE);
             // ⑥ Thin paper mode من MechanicProfile (إن وُجد)
             if (_settings.MechanicProfile?.ThinPaperMode == true)
                 page.Append([ESCP2.ESC, 0x28, 0x76, 0x01, 0x04]);
@@ -292,8 +274,8 @@ namespace ElnagarPrint.RIP.Core
 
         private void AppendPageStart(EncodedPage page, int heightInDots)
         {
-            // GS v 0 — بدء Raster في 6 planes
-            page.Append(ESCP2.CMD_RASTER_START);
+            // ESC/P2 graphics mode; raster data follows as ESC i blocks.
+            page.Append(ESCP2.CMD_GRAPHICS_MODE);
         }
 
         // ════════════════════════════════════════════════════════════════════════
@@ -317,21 +299,20 @@ namespace ElnagarPrint.RIP.Core
                 var channel = GetChannel(halftone, ch);
                 if (channel == null) continue;
 
-                // بدء خط الـ raster لهذا الـ plane
-                // ESC * m xL xH [data]
-                // m = 0 (no compress) أو 33 (auto compress)
-                byte compressMode = _settings.UseCompression ? (byte)33 : (byte)0;
-                int byteCount = width; // 1 bit per pixel → byteCount = width
-
-                page.Append(ESCP2.ESC);
-                page.Append(ESCP2.CMD_RASTER_LINE);
-                page.Append(compressMode);
-                page.Append((byte)(byteCount & 0xFF));         // xL (low)
-                page.Append((byte)((byteCount >> 8) & 0xFF));  // xH (high)
-
-                // البيانات: 1 bit per pixel per channel
-                AppendRasterLineData(page, channel, row, width);
+                AppendRasterLine(page, channel, row, width, ch);
             }
+        }
+
+        private void AppendRasterLine(EncodedPage page, HalftonedChannel channel,
+            int row, int width, ChannelOrder color)
+        {
+            const int bitsPerPixel = 2;
+            int byteCount = (width * bitsPerPixel + 7) / 8;
+            byte compression = _settings.UseCompression ? (byte)1 : (byte)0;
+            page.Append(new byte[] { ESCP2.ESC, 0x69, ColorCode(color), compression,
+                bitsPerPixel, (byte)(byteCount & 0xFF), (byte)(byteCount >> 8),
+                0x01, 0x00 });
+            AppendRasterLineData(page, channel, row, width, bitsPerPixel);
         }
 
         /// <summary>
@@ -344,56 +325,54 @@ namespace ElnagarPrint.RIP.Core
         ///   • ثم RLE byte-pair: 3+ consecutive same bytes → [0xFF, count, value]
         /// </summary>
         private void AppendRasterLineData(EncodedPage page,
-            HalftonedChannel channel, int row, int width)
+            HalftonedChannel channel, int row, int width, int bitsPerPixel)
         {
+            var packed = PackLevels(channel, row, width, bitsPerPixel);
             if (_settings.UseCompression)
-            {
-                // Phase A: pack bits
-                var bits = new byte[(width + 7) / 8];
-                for (int col = 0; col < width; col++)
-                {
-                    byte dotLevel = channel.GetDot(row, col);
-                    if (dotLevel > 0)
-                        bits[col / 8] |= (byte)(0x80 >> (col & 7));
-                }
-
-                // Phase B: RLE compress + write
-                int pos = 0;
-                while (pos < bits.Length)
-                {
-                    var (rleToken, consumed) = RLECompress(bits, pos);
-                    page.Append(rleToken);
-                    pos += consumed;
-                }
-            }
+                AppendTiffRle(page, packed);
             else
-            {
-                // Uncompressed: pack bits directly without RLE
-                int bitAccum = 0;
-                int bitCount = 0;
-                for (int col = 0; col < width; col++)
-                {
-                    byte dotLevel = channel.GetDot(row, col);
-                    bitAccum = (bitAccum << 1) | (dotLevel > 0 ? 1 : 0);
-                    bitCount++;
+                page.Append(packed);
 
-                    if (bitCount == 8)
-                    {
-                        page.Append((byte)bitAccum);
-                        bitAccum = 0;
-                        bitCount = 0;
-                    }
-                }
-                // Padding
-                if (bitCount > 0)
-                {
-                    bitAccum <<= (8 - bitCount);
-                    page.Append((byte)bitAccum);
-                }
-            }
-
-            // Line terminator
             page.Append(ESCP2.CMD_LINE_FEED);
+        }
+
+        private static byte[] PackLevels(HalftonedChannel channel, int row, int width, int bits)
+        {
+            var data = new byte[(width * bits + 7) / 8];
+            for (int col = 0; col < width; col++)
+            {
+                int bit = col * bits;
+                data[bit / 8] |= (byte)((channel.GetDot(row, col) & 0x03) << (8 - bits - bit % 8));
+            }
+            return data;
+        }
+
+        private static void AppendTiffRle(EncodedPage page, byte[] data)
+        {
+            int pos = 0;
+            while (pos < data.Length)
+            {
+                int run = 1;
+                while (pos + run < data.Length && data[pos + run] == data[pos] && run < 128) run++;
+                if (run >= 2)
+                {
+                    page.Append((byte)(257 - run));
+                    page.Append(data[pos]);
+                    pos += run;
+                    continue;
+                }
+
+                int start = pos++;
+                while (pos < data.Length && pos - start < 128)
+                {
+                    run = 1;
+                    while (pos + run < data.Length && data[pos + run] == data[pos] && run < 2) run++;
+                    if (run >= 2) break;
+                    pos++;
+                }
+                page.Append((byte)(pos - start - 1));
+                for (int i = start; i < pos; i++) page.Append(data[i]);
+            }
         }
 
         /// <summary>
@@ -436,11 +415,9 @@ namespace ElnagarPrint.RIP.Core
 
         private void AppendPageEnd(EncodedPage page)
         {
-            // إنهاء الـ Raster
-            page.Append(ESCP2.CMD_RASTER_END);
-            // سطر جديد + صفحة جديدة
-            page.Append(ESCP2.CMD_LINE_FEED);
+            // ESC/P2 graphics jobs terminate with form feed; ESC @ resets graphics mode.
             page.Append(ESCP2.CMD_FORM_FEED);
+            page.Append(ESCP2.CMD_RESET);
         }
 
         // ════════════════════════════════════════════════════════════════════════
@@ -497,13 +474,11 @@ namespace ElnagarPrint.RIP.Core
 
             for (int row = 0; row < halftoneResult.Height; row++)
             {
-                if (mp.PrintDirection == PrintDirection.UniDirectional)
-                    page.Append(ESCP2.CMD_UNIDIR);
+                if (_settings.UseMicroWeave)
+                    page.Append(ESCP2.CMD_MICROWEAVE);
 
                 AppendRasterLineFilteredVDS(page, halftoneResult, planes, row, minLevel);
 
-                if (mp.PrintDirection == PrintDirection.UniDirectional)
-                    page.Append(ESCP2.CMD_BIDIR);
             }
 
             // قطع الورق لو مُفعّل
@@ -538,25 +513,20 @@ namespace ElnagarPrint.RIP.Core
             EncodedPage page,
             HalftonedChannel channel,
             int row, int width,
-            int minLevel)
+            int minLevel, int bitsPerPixel)
         {
             if (_settings.UseCompression)
             {
-                var bits = new byte[(width + 7) / 8];
+                var bits = new byte[(width * bitsPerPixel + 7) / 8];
                 for (int col = 0; col < width; col++)
                 {
                     byte dotLevel = channel.GetDot(row, col);
-                    if (dotLevel >= minLevel)
-                        bits[col / 8] |= (byte)(0x80 >> (col & 7));
+                    int bit = col * bitsPerPixel;
+                    byte level = dotLevel >= minLevel ? dotLevel : (byte)0;
+                    bits[bit / 8] |= (byte)((level & 0x03) << (8 - bitsPerPixel - bit % 8));
                 }
 
-                int pos = 0;
-                while (pos < bits.Length)
-                {
-                    var (token, consumed) = RLECompress(bits, pos);
-                    page.Append(token);
-                    pos += consumed;
-                }
+                AppendTiffRle(page, bits);
             }
             else
             {
@@ -566,8 +536,8 @@ namespace ElnagarPrint.RIP.Core
                 for (int col = 0; col < width; col++)
                 {
                     byte dotLevel = channel.GetDot(row, col);
-                    bitAccum = (bitAccum << 1) | (dotLevel >= minLevel ? 1 : 0);
-                    bitCount++;
+                    bitAccum = (bitAccum << bitsPerPixel) | (dotLevel >= minLevel ? dotLevel & 0x03 : 0);
+                    bitCount += bitsPerPixel;
 
                     if (bitCount == 8)
                     {
@@ -594,20 +564,18 @@ namespace ElnagarPrint.RIP.Core
             int minLevel)
         {
             int width = halftone.Width;
-            byte compressMode = _settings.UseCompression ? (byte)33 : (byte)0;
-
             foreach (var ch in planes)
             {
                 var channel = GetChannel(halftone, ch);
                 if (channel == null) continue;
 
-                page.Append(ESCP2.ESC);
-                page.Append(ESCP2.CMD_RASTER_LINE);
-                page.Append(compressMode);
-                page.Append((byte)(width & 0xFF));
-                page.Append((byte)((width >> 8) & 0xFF));
-
-                AppendRasterLineDataFiltered(page, channel, row, width, minLevel);
+                const int bitsPerPixel = 2;
+                int byteCount = (width * bitsPerPixel + 7) / 8;
+                byte compression = _settings.UseCompression ? (byte)1 : (byte)0;
+                page.Append(new byte[] { ESCP2.ESC, 0x69, ColorCode(ch), compression,
+                    bitsPerPixel, (byte)(byteCount & 0xFF), (byte)(byteCount >> 8),
+                    0x01, 0x00 });
+                AppendRasterLineDataFiltered(page, channel, row, width, minLevel, bitsPerPixel);
             }
         }
 
@@ -618,10 +586,8 @@ namespace ElnagarPrint.RIP.Core
             // ① تهيئة الطابعة — Reset
             page.Append(ESCP2.CMD_RESET);
 
-            // ② GS ( W — ضبط اتجاه الطباعة (Bi/Uni)
-            var dirCmd = _settings.BiDirectional
-                ? ESCP2.CMD_BIDIR : ESCP2.CMD_UNIDIR;
-            page.Append(dirCmd);
+            // ② ESC U — ضبط اتجاه الطباعة (Bi/Uni)
+            page.Append(ESCP2.CmdPrintDirection(!_settings.BiDirectional));
 
             // ③ ESC ( U — ضبط الوحدة: 1/360" أو 1/720"
             switch (_settings.Resolution)
@@ -636,7 +602,7 @@ namespace ElnagarPrint.RIP.Core
             page.Append(ESCP2.CmdSetLineGap(_settings.LineGap));
 
             // ⑤ اختيار مجموعة الأحبار — 6 ألوان لـ L1800
-            AppendSelectInkSet(page);
+            page.Append(ESCP2.CMD_COLOR_MODE);
 
             // ⑥ أمر تغذية الورق المحسّنة ( Thin Paper Mode)
             if (_settings.MechanicProfile?.ThinPaperMode == true)
@@ -654,7 +620,18 @@ namespace ElnagarPrint.RIP.Core
 
         // ─── أدوات مساعدة ─────────────────────────────────
 
-        private static HalftonedChannel GetChannel(HalftoneResult result, ChannelOrder order)
+        private static byte ColorCode(ChannelOrder order) => order switch
+        {
+            ChannelOrder.Black => 0,
+            ChannelOrder.Magenta => 1,
+            ChannelOrder.Cyan => 2,
+            ChannelOrder.Yellow => 4,
+            ChannelOrder.LightMagenta => 17,
+            ChannelOrder.LightCyan => 18,
+            _ => 0
+        };
+
+        private static HalftonedChannel? GetChannel(HalftoneResult result, ChannelOrder order)
             => order switch
             {
                 ChannelOrder.Cyan          => result.Cyan,

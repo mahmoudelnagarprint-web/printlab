@@ -227,13 +227,12 @@ public sealed class MechanicsControlProcessor
         Settings = settings ?? new MechanicsSettings();
     }
 
-    /// <summary>بناء أمر تهيئة الاتجاه (Uni/Bi) — GS ( W</summary>
+    /// <summary>بناء أمر تهيئة الاتجاه (Uni/Bi) — ESC U</summary>
     public byte[] BuildDirectionCommand()
     {
-        // Print direction in ESC/P2
-        // GS ( W 02 00 00 01 → bidirectional (0) / unidirectional (1)
+        // ESC U: 0 = bidirectional, 1 = unidirectional.
         byte dir = Settings.Direction == PrintDirection.UniDirectional ? (byte)1 : (byte)0;
-        return [0x1D, 0x28, 0x57, 0x02, 0x00, 0x00, 0x01, dir];
+        return [0x1B, 0x55, dir];
     }
 
     /// <summary>بناء أمر ضبط ارتفاع الرأس — ESC Space (head gap)</summary>

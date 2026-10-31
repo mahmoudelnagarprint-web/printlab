@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using ImageMagick;
 
 namespace ElnagarPrint.RIP.Core
@@ -195,13 +196,15 @@ namespace ElnagarPrint.RIP.Core
         //  المهمة الرئيسية: PrintImage
         // ════════════════════════════════════════════════════════════════════════
 
-        public PipelineResult PrintImage(string imagePath, bool autoOpenPrinter = true)
+        public PipelineResult PrintImage(string imagePath, bool autoOpenPrinter = true,
+            CancellationToken cancellationToken = default)
         {
             var sw = Stopwatch.StartNew();
             Report(2, "بدء مهمة الطباعة…");
 
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 // ① تحميل الصورة
                 Report(5, "① تحميل الصورة…");
                 var (rgb, w, h) = LoadImageToRGB(imagePath);
@@ -211,7 +214,7 @@ namespace ElnagarPrint.RIP.Core
                 // ② المحرك اللوني — الفلاتر الحقيقية
                 Report(10, "② المحرك اللوني — فلاتر حقيقية…");
                 var sepSw = Stopwatch.StartNew();
-                var (inkGrid, inkW, inkH) = ApplyColorEngineAndInkControl(rgb, w, h);
+                var (inkGrid, inkW, inkH) = ApplyColorEngineAndInkControl(rgb, w, h, cancellationToken);
                 sepSw.Stop();
                 if (inkGrid == null)
                     return Fail("فشل فصل الألوان", sw);
@@ -260,7 +263,8 @@ namespace ElnagarPrint.RIP.Core
                 var encSw = Stopwatch.StartNew();
                 var mechanic = BuildMechanics();
                 // الجودة 1-2 تجبر 360dpi (مسودة سريعة)؛ غير ذلك كومبو الدقة في Options هو الحاكم
-                var (_, multiPass) = LayoutComposer.QualityToResolution(_settings.QualityLevel);
+                var (_, qualityMultiPass) = LayoutComposer.QualityToResolution(_settings.QualityLevel);
+                var multiPass = _settings.UseMultiPass && qualityMultiPass;
                 var effectiveRes = _settings.QualityLevel <= 2
                     ? PrintResolution.Dpi360
                     : _settings.Resolution;
@@ -299,6 +303,7 @@ namespace ElnagarPrint.RIP.Core
                 int copies = Math.Max(1, _settings.Copies);
                 for (int copy = 1; copy <= copies; copy++)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     Report(Math.Min(90, 80 + copy * 8 / copies),
                         $"⑧ إرسال نسخة {copy}/{copies} — الوجه 1…");
 
@@ -317,6 +322,7 @@ namespace ElnagarPrint.RIP.Core
                     // Duplex يدوي — الوجه الثاني (مُعكوس) بعد آخر نسخة
                     if ((_settings.DuplexIndex > 0 || _settings.Brochure) && copy == copies)
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
                         Report(93, "⑨ الوجه الثاني — اقلب الورقة…");
                         var side2 = MirrorHalftone(halftone);
                         var single2 = encoder.EncodePage(side2);
@@ -354,6 +360,10 @@ namespace ElnagarPrint.RIP.Core
                     LayoutSteps   = layout.AppliedSteps,
                     SidesPrinted  = sidesPrinted
                 };
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -469,7 +479,7 @@ namespace ElnagarPrint.RIP.Core
         // ════════════════════════════════════════════════════════════════════════
 
         private (InkChannels6[,]?, int, int) ApplyColorEngineAndInkControl(
-            double[]? rgb, int w, int h)
+            double[]? rgb, int w, int h, CancellationToken cancellationToken = default)
         {
             if (rgb == null) return (null, 0, 0);
 
@@ -485,9 +495,11 @@ namespace ElnagarPrint.RIP.Core
 
             for (int row = 0; row < h; row++)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 int rowBase = row * w * 3;
                 for (int col = 0; col < w; col++)
                 {
+                    if ((col & 0x3FF) == 0) cancellationToken.ThrowIfCancellationRequested();
                     double r = rgb[rowBase + col * 3 + 0];
                     double g = rgb[rowBase + col * 3 + 1];
                     double b = rgb[rowBase + col * 3 + 2];
