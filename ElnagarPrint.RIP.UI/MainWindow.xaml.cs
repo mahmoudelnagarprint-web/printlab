@@ -4,36 +4,53 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using ElnagarPrint.RIP.Core;
 using ElnagarPrint.RIP.UI.Models;
 using ElnagarPrint.RIP.UI.Services;
 using ElnagarPrint.RIP.UI.ViewModels;
+using ElnagarPrint.RIP.UI.Views;
 using Microsoft.Win32;
 
 namespace ElnagarPrint.RIP.UI;
 
 /// <summary>
-/// النافذة الرئيسية — تربط التبويبات السبعة بالمحرك وتدير الطباعة غير المتزامنة
+/// النافذة الرئيسية — لوحة رئيسية بثلاثة أعمدة + تنقّل سفلي (تصميم v4)
+/// الرئيسية: معاينة بسويتشات القنوات | إعدادات سريعة + قنوات فاتحة + ورق | حالة + حلقة تقدم
 /// </summary>
 public partial class MainWindow : Window
 {
     private readonly MainViewModel _vm = new();
     private HalftoneResult? _lastHalftone;
     private CancellationTokenSource? _previewCts;
+    private int _previewChannelIndex = -1;   // -1 = توليفية
+    private int _activeSwatch = -1;
+
+    // صفحات التنقّل — تُنشأ مرة واحدة
+    private readonly TabLayoutView     _tabLayout     = new();
+    private readonly TabColorView      _tabColor      = new();
+    private readonly TabInkCtrlView    _tabInkCtrl    = new();
+    private readonly TabCorrectionView _tabCorrection = new();
+    private readonly TabOptionsView    _tabOptions    = new();
 
     public MainWindow()
     {
         InitializeComponent();
 
-        // ربط الـ ViewModel بكل التبويبات السبعة (نفس الكائن)
-        TabMain.DataContext      = _vm;
-        TabLayout.DataContext    = _vm;
-        TabColor.DataContext     = _vm;
-        TabCorrection.DataContext= _vm;
-        TabConsumption.DataContext = _vm;
-        TabInkCtrl.DataContext   = _vm;
-        TabOptions.DataContext   = _vm;
+        // ⚖️ مقاس متكيّف مع أي شاشة — 92% من مساحة العمل مع حد أقصى معقول
+        var work = SystemParameters.WorkArea;
+        Width  = Math.Min(1500, work.Width  * 0.92);
+        Height = Math.Min(900,  work.Height * 0.92);
+        Left = (work.Width  - Width)  / 2 + work.Left;
+        Top  = (work.Height - Height) / 2 + work.Top;
+
+        // ربط الـ ViewModel بكل الصفحات
+        _tabLayout.DataContext      = _vm;
+        _tabColor.DataContext       = _vm;
+        _tabInkCtrl.DataContext     = _vm;
+        _tabCorrection.DataContext  = _vm;
+        _tabOptions.DataContext     = _vm;
 
         // السجلات
         _vm.LogAdded += (_, line) => AppendLog(line);
@@ -45,18 +62,130 @@ public partial class MainWindow : Window
             UpdatePreview();
         };
 
+        // تتبّع تقدم الطباعة — الحلقة الدائرية
+        _vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainViewModel.ProgressPercent))
+                UpdateProgressRing(_vm.ProgressPercent);
+        };
+
+        UpdateRingGeometry(0);
         UpdatePrinterStatus(initial: true);
     }
 
-    /// <summary>
-    /// 🔌 زر «اختبار» — تشخيص كامل لمسارات الاتصال بالطابعة (Stage 4)
-    /// LibUsb registry → طوابير Windows → فتح USB تجريبي → صلاحية الطابور
-    /// </summary>
+    // ════════════════════════════════════════════════════════════════════
+    //  الحلقة الدائرية للتقدم — Path arc
+    // ════════════════════════════════════════════════════════════════════
+
+    private void UpdateProgressRing(int pct)
+    {
+        pct = Math.Clamp(pct, 0, 100);
+        RingPercentText.Text = $"{pct}%";
+        UpdateRingGeometry(pct);
+    }
+
+    private void UpdateRingGeometry(int pct)
+    {
+        const double size = 150;      // قطر الحلقة
+        const double r = 65;          // نصف القطر
+        var center = new Point(size / 2, size / 2);
+
+        // حلقة الخلفية — دائرة كاملة
+        RingBackground.Data = Geometry.Parse(
+            $"M {size / 2 - r},{size / 2} a {r},{r} 0 1 0 {r * 2},0 a {r},{r} 0 1 0 {-r * 2},0");
+
+        if (pct <= 0)
+        {
+            RingProgress.Data = Geometry.Empty;
+            return;
+        }
+
+        // قوس التقدم — يبدأ من الأعلى ويلتف باتجاه عقارب الساعة
+        double sweep = pct / 100.0 * 360.0;
+        double startAngle = -90;
+        double endAngle = startAngle + sweep;
+
+        var start = PointFromAngle(center, r, startAngle);
+        var end = PointFromAngle(center, r, endAngle);
+        bool isLarge = sweep > 180;
+
+        var geo = new StreamGeometry();
+        using (var ctx = geo.Open())
+        {
+            ctx.BeginFigure(start, false, false);
+            ctx.ArcTo(end, new Size(r, r), 0, isLarge, SweepDirection.Clockwise, true, false);
+        }
+        geo.Freeze();
+        RingProgress.Data = geo;
+    }
+
+    private static Point PointFromAngle(Point c, double r, double deg)
+    {
+        double rad = deg * Math.PI / 180.0;
+        return new Point(c.X + r * Math.Cos(rad), c.Y + r * Math.Sin(rad));
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    //  التنقّل السفلي — تبديل لوحة الرئيسية / الصفحات
+    // ════════════════════════════════════════════════════════════════════
+
+    private void Nav_Changed(object sender, RoutedEventArgs e)
+    {
+        if (sender is not RadioButton rb || rb.Tag is not string key) return;
+        if (PageHost is null || HomePanel is null) return;   // أثناء تهيئة XAML
+
+        if (key == "home")
+        {
+            HomePanel.Visibility = Visibility.Visible;
+            PageHost.Content = null;
+            PageHost.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            HomePanel.Visibility = Visibility.Collapsed;
+            PageHost.Visibility = Visibility.Visible;
+            PageHost.Content = key switch
+            {
+                "layout"     => _tabLayout,
+                "color"      => _tabColor,
+                "ink"        => _tabInkCtrl,
+                "correction" => _tabCorrection,
+                "options"    => _tabOptions,
+                _            => null
+            };
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    //  سويتشات القنوات — ضغطة: قناة، ضغطة ثانية على نفسها: توليفي
+    // ════════════════════════════════════════════════════════════════════
+
+    private void ChannelSwatch_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button b || b.Tag is not string tag) return;
+        int idx = int.Parse(tag);
+
+        _previewChannelIndex = (_activeSwatch == idx) ? -1 : idx;
+        _activeSwatch = (_previewChannelIndex == -1) ? -1 : idx;
+        UpdatePreview();
+    }
+
+    /// <summary>تصفير عدادات الاستهلاك من كارت الحالة</summary>
+    private void ResetMeters_Click(object sender, RoutedEventArgs e)
+    {
+        _vm.ResetMeters();
+        _vm.Log("🗑 صُفِّرت عدادات الاستهلاك.");
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    //  🔌 تشخيص الاتصال (Stage 4)
+    // ════════════════════════════════════════════════════════════════════
+
     private void TestConnection_Click(object sender, RoutedEventArgs e)
     {
         _vm.Log("🔌 بدء تشخيص الاتصال بالطابعة…");
 
-        System.Threading.Tasks.Task.Run(() =>
+        Task.Run(() =>
         {
             try
             {
@@ -70,7 +199,7 @@ public partial class MainWindow : Window
                     if (report.HasWorkingTransport)
                     {
                         PrinterStatusText.Text = $"الطابعة: جاهزة عبر {report.WorkingTransport}";
-                        PrinterStatusDot.Fill = (System.Windows.Media.Brush)FindResource("SuccessGreenBrush");
+                        PrinterStatusDot.Fill = (Brush)FindResource("SuccessGreenBrush");
                     }
                 });
             }
@@ -87,7 +216,6 @@ public partial class MainWindow : Window
     {
         try
         {
-            // تقدير سريع من الصورة — كثافة افتراضية 0.5 (تُحدَّث من الـ halftone في Stage 4)
             _vm.LastCost = InkCostEstimator.QuickEstimate(imagePath, inkDensityFactor: 0.5);
             _vm.Log($"💧 تقدير الاستهلاك: {_vm.CostTotalMl} — {_vm.CostTotalEgp}");
         }
@@ -127,7 +255,6 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>معاينة الصورة الأصلية (قبل التنقيط) في لوحة المعاينة</summary>
     private void ShowSourcePreview(string path)
     {
         try
@@ -139,10 +266,10 @@ public partial class MainWindow : Window
             bmp.EndInit();
             bmp.Freeze();
 
-            PreviewImage.Source   = bmp;
+            PreviewImage.Source = bmp;
             PreviewPlaceholder.Visibility = Visibility.Collapsed;
             var fi = new FileInfo(path);
-            PreviewInfoText.Text  = $"{Path.GetFileName(path)} — {bmp.PixelWidth}×{bmp.PixelHeight}px — {fi.Length / 1024.0:F0} KB";
+            PreviewInfoText.Text = $"{Path.GetFileName(path)} — {bmp.PixelWidth}×{bmp.PixelHeight}px — {fi.Length / 1024.0:F0} KB";
         }
         catch (Exception ex)
         {
@@ -151,7 +278,7 @@ public partial class MainWindow : Window
     }
 
     // ════════════════════════════════════════════════════════════════════
-    //  المعاينة (بدون طباعة) — يشغّل pipeline حتى مرحلة التنقيط
+    //  المعاينة (بدون طباعة)
     // ════════════════════════════════════════════════════════════════════
 
     private async void Preview_Click(object sender, RoutedEventArgs e)
@@ -175,17 +302,14 @@ public partial class MainWindow : Window
             var imagePath = _vm.CurrentImagePath;
             var settings  = _vm.BuildPipelineSettings();
 
-            // 🚀 الـ pipeline في خيط خلفي — حتى المعاينة لا تتجمد
             var halftone = await Task.Run(() =>
             {
-                // Pipeline settings نفسها تُبنى، لكن نستخدم PreviewHalftone الذي
-                // يمر بالمراحل 1→3 فقط (فصل ألوان + تنقيط) بدون ترميز أو USB
                 var pipeline = new RipPipeline(settings);
                 return pipeline.PreviewHalftone(imagePath);
             }, token);
 
             _vm.RaisePreviewReady(halftone);
-            _vm.Log("✅ المعاينة جاهزة — استخدم قائمة «القناة» لعرض كل قناة.");
+            _vm.Log("✅ المعاينة جاهزة — اضغط مربع لون لعرض قناته منفردة.");
             UpdateConsumptionEstimate(imagePath);
         }
         catch (OperationCanceledException) { _vm.Log("🛑 أُلغيت المعاينة."); }
@@ -198,29 +322,26 @@ public partial class MainWindow : Window
     }
 
     // ════════════════════════════════════════════════════════════════════
-    //  تحديث لوحة المعاينة حسب القناة المختارة
+    //  تحديث المعاينة حسب القناة
     // ════════════════════════════════════════════════════════════════════
-
-    private void PreviewChannel_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        => UpdatePreview();
 
     private void UpdatePreview()
     {
         if (_lastHalftone is null) return;
 
-        int idx = PreviewChannelCombo?.SelectedIndex is int i && i >= 1 ? i - 1 : -1;
+        int idx = _previewChannelIndex;
 
         var small = HalftonePreviewRenderer.Render(_lastHalftone, idx);
-        PreviewImage.Source = HalftonePreviewRenderer.Upscale(small, 320)
-                              ?? small;
+        PreviewImage.Source = HalftonePreviewRenderer.Upscale(small, 320) ?? small;
         PreviewPlaceholder.Visibility = Visibility.Collapsed;
 
         PreviewInfoText.Text = $"معاينة منقّطة {_lastHalftone.Width}×{_lastHalftone.Height}px — " +
-                               (idx < 0 ? "توليفية (6 قنوات)" : new[]{"Cyan","Magenta","Yellow","Black","LightCyan","LightMagenta"}[idx]);
+                               (idx < 0 ? "توليفية (6 قنوات)"
+                                        : new[]{"Cyan","Magenta","Yellow","Black","LightCyan","LightMagenta"}[idx]);
     }
 
     // ════════════════════════════════════════════════════════════════════
-    //  الطباعة — async عبر AsyncPrintCommand
+    //  الطباعة — async
     // ════════════════════════════════════════════════════════════════════
 
     private async void Print_Click(object sender, RoutedEventArgs e)
@@ -235,55 +356,46 @@ public partial class MainWindow : Window
         CancelPrintButton.IsEnabled = true;
         PrintButton.IsEnabled = false;
 
-        // ⏳ تشغيل الـ pipeline في خيط خلفي عبر الأمر غير المتزامن
         _vm.PrintCommand.Execute(null);
 
-        // انتظار انتهاء الأمر لتحديث الأزرار
         while (_vm.IsBusy)
             await Task.Delay(200);
 
         CancelPrintButton.IsEnabled = false;
         PrintButton.IsEnabled = true;
 
-        // تحديث حاسبة الاستهلاك بعد الطباعة
         if (!string.IsNullOrEmpty(_vm.CurrentImagePath))
             UpdateConsumptionEstimate(_vm.CurrentImagePath);
     }
 
     private void CancelPrint_Click(object sender, RoutedEventArgs e)
     {
-        // إلغاء عبر الأمر ( CancellationToken )
         if (_vm.PrintCommand is AsyncPrintCommand cmd)
             cmd.Cancel();
         _vm.Log("🛑 طُلب الإلغاء…");
     }
 
     // ════════════════════════════════════════════════════════════════════
-    //  وضع الورشة السريع — Quick Workshop Mode ⚡
+    //  وضع الورشة السريع ⚡ — الرئيسية فقط بدون تنقّل
     // ════════════════════════════════════════════════════════════════════
 
     private void QuickMode_Changed(object sender, RoutedEventArgs e)
     {
+        if (NavBar is null || HomePanel is null || PageHost is null) return;
+
         bool quick = QuickModeToggle?.IsChecked == true;
 
-        // إخفاء التبويبات المتقدمة — يبقى Main + Consumption + Ink Ctrl
-        if (MainTabs != null)
+        NavBar.Visibility = quick ? Visibility.Collapsed : Visibility.Visible;
+        if (quick)
         {
-            foreach (TabItem tab in MainTabs.Items.OfType<TabItem>())
-            {
-                var header = tab.Header?.ToString() ?? "";
-                bool keepVisible = header is "Main" or "Consumption" or "Ink Ctrl";
-                tab.Visibility = quick && !keepVisible ? Visibility.Collapsed : Visibility.Visible;
-            }
+            PageHost.Content = null;
+            PageHost.Visibility = Visibility.Collapsed;
+            HomePanel.Visibility = Visibility.Visible;
         }
 
-        // إخفاء لوحة المعاينة الجانبية في الوضع السريع لتوسيع مساحة العمل
-        if (PreviewColumn != null)
-            PreviewColumn.Width = quick ? new GridLength(0) : new GridLength(340);
-
         _vm?.Log(quick
-            ? "⚡ وضع الورشة السريع: مُفعّل — 3 تبويبات فقط + معاينة مخفية"
-            : "🔧 الوضع الاحترافي الكامل: 7 تبويبات");
+            ? "⚡ وضع الورشة السريع: الرئيسية فقط — كل ما تحتاجه في شاشة واحدة"
+            : "🔧 الوضع الاحترافي الكامل: كل الصفحات متاحة");
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -292,7 +404,6 @@ public partial class MainWindow : Window
 
     private void UpdatePrinterStatus(bool initial = false)
     {
-        // الفحص في خيط خلفي — لا يجمّد الواجهة عند بدء التشغيل
         Task.Run(() =>
         {
             DiscoveredPrinter[]? printers = null;
@@ -303,11 +414,11 @@ public partial class MainWindow : Window
                 bool found = printers is { Length: > 0 };
 
                 PrinterStatusDot.Fill = found
-                    ? (System.Windows.Media.Brush)FindResource("SuccessGreenBrush")
-                    : (System.Windows.Media.Brush)FindResource("TextMutedBrush");
+                    ? (Brush)FindResource("SuccessGreenBrush")
+                    : (Brush)FindResource("TextMutedBrush");
 
                 PrinterStatusText.Text = found
-                    ? $"الطابعة: {printers![0].Name} ✓"
+                    ? "الطابعة: متصلة ✓"
                     : "الطابعة: غير متصلة";
 
                 if (found) _vm.Log($"🖨 اتصلت طابعة: {printers![0].Name}");

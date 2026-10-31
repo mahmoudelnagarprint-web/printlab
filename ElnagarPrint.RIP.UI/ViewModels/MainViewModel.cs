@@ -218,7 +218,14 @@ public class MainViewModel : ObservableBase
     }
 
     private PrintResolutionKind _resolution = PrintResolutionKind.Dpi720;
-    public PrintResolutionKind Resolution { get => _resolution; set => Set(ref _resolution, value); }
+    public PrintResolutionKind Resolution
+    {
+        get => _resolution;
+        set { if (Set(ref _resolution, value)) OnPropertyChanged(nameof(ResolutionText)); }
+    }
+
+    /// <summary>نص الدقة لكارت الحالة في اللوحة الرئيسية — مثل «720 DPI»</summary>
+    public string ResolutionText => $"{(int)Resolution} DPI";
 
     private bool _useRleCompression = true;
     public bool UseRleCompression { get => _useRleCompression; set => Set(ref _useRleCompression, value); }
