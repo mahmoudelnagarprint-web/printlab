@@ -154,6 +154,15 @@ public class MainViewModel : ObservableBase
     /// <summary>زر تصفير العدادات</summary>
     public void ResetMeters() => LastCost = null;
 
+    /// <summary>زر تصفير الإعدادات السريعة — إرجاع الكثافة/السطوع/التباين/الإشباع إلى 100%</summary>
+    public void ResetQuickAdjustments()
+    {
+        Density    = 1.0;
+        Brightness = 1.0;
+        Contrast   = 1.0;
+        Saturation = 1.0;
+    }
+
     // ════════════════════════════════════════════════════════════════════
     //  تبويب Ink Ctrl
     // ════════════════════════════════════════════════════════════════════

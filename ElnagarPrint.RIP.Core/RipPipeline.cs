@@ -379,9 +379,9 @@ namespace ElnagarPrint.RIP.Core
         //  المعاينة: PreviewHalftone — نفس المسار حتى التنقيط
         // ════════════════════════════════════════════════════════════════════════
 
-        public HalftoneResult PreviewHalftone(string imagePath)
+        public HalftoneResult PreviewHalftone(string imagePath, int previewMaxSide = 0)
         {
-            var (rgb, w, h) = LoadImageToRGB(imagePath);
+            var (rgb, w, h) = LoadImageToRGB(imagePath, previewMaxSide);
             if (rgb == null)
                 throw new IOException($"تعذر تحميل الصورة: {imagePath}");
 
@@ -409,7 +409,7 @@ namespace ElnagarPrint.RIP.Core
         /// يدعم: BMP/JPG/PNG/TIFF/PSD/WebP + EXIF orientation + 16-bit حقيقي
         /// (BitDepth من تبويب Options: 8 → 0..255، 16 → 0..65535 بمساحة تدرّج أعلى)
         /// </summary>
-        private (double[]?, int, int) LoadImageToRGB(string imagePath)
+        private (double[]?, int, int) LoadImageToRGB(string imagePath, int previewMaxSide = 0)
         {
             if (!File.Exists(imagePath))
                 return (null, 0, 0);
@@ -424,6 +424,20 @@ namespace ElnagarPrint.RIP.Core
                 image.ColorSpace = ColorSpace.sRGB;
 
             int w = (int)image.Width, h = (int)image.Height;
+
+            // معاينة حية: تصغير لأقصى ضلع للمعاينة — سرعة لحظية (الطباعة الكاملة بلا تصغير)
+            if (previewMaxSide > 0)
+            {
+                int maxSide = Math.Max(w, h);
+                if (maxSide > previewMaxSide)
+                {
+                    double scale = previewMaxSide / (double)maxSide;
+                    int nw = Math.Max(1, (int)(w * scale));
+                    int nh = Math.Max(1, (int)(h * scale));
+                    image.Resize(new MagickGeometry((uint)nw, (uint)nh));
+                    w = (int)image.Width; h = (int)image.Height;
+                }
+            }
 
             // حد أقصى 15MP — تصغير تلقائي (A3+ @720dpi ≈ 11MP)
             const long maxPixels = 15_000_000;

@@ -420,6 +420,31 @@
                 </Setter>
             </Style>
 
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <!--  ComboBoxItem — القائمة المنسدلة بيضاء فالنص أسود ليظهر        -->
+            <!-- ══════════════════════════════════════════════════════════════ -->
+            <Style TargetType="ComboBoxItem">
+                <Setter Property="Padding" Value="10,6"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ComboBoxItem">
+                            <Border x:Name="bd" Background="Transparent" Padding="{TemplateBinding Padding}">
+                                <TextBlock Text="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}"
+                                           Foreground="#111111" TextTrimming="CharacterEllipsis"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsHighlighted" Value="True">
+                                    <Setter TargetName="bd" Property="Background" Value="#F0E6C0"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="bd" Property="Background" Value="#EFE3B0"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
         </ResourceDictionary>
     </Application.Resources>
 </Application>

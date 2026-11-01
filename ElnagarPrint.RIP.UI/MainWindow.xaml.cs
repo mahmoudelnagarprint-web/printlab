@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -6,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using ElnagarPrint.RIP.Core;
 using ElnagarPrint.RIP.UI.Models;
 using ElnagarPrint.RIP.UI.Services;
@@ -26,6 +29,21 @@ public partial class MainWindow : Window
     private CancellationTokenSource? _previewCts;
     private int _previewChannelIndex = -1;   // -1 = توليفية
     private int _activeSwatch = -1;
+
+    // المعاينة الحية — أي تحريك سلايدر يُحدّث المعاينة فورًا
+    private DispatcherTimer? _livePreviewTimer;
+    private CancellationTokenSource? _liveCts;
+    private int _liveRunId;
+
+    private static readonly HashSet<string> LivePreviewTriggers = new()
+    {
+        nameof(MainViewModel.Density),     nameof(MainViewModel.Brightness),
+        nameof(MainViewModel.Contrast),    nameof(MainViewModel.Saturation),
+        nameof(MainViewModel.CorrCyan),    nameof(MainViewModel.CorrMagenta),
+        nameof(MainViewModel.CorrYellow),  nameof(MainViewModel.CorrBlack),
+        nameof(MainViewModel.LcInkPercent),nameof(MainViewModel.LmInkPercent),
+        nameof(MainViewModel.LockLightCyan), nameof(MainViewModel.LockLightMagenta)
+    };
 
     // صفحات التنقّل — تُنشأ مرة واحدة
     private readonly TabLayoutView     _tabLayout     = new();
@@ -68,6 +86,11 @@ public partial class MainWindow : Window
             if (e.PropertyName == nameof(MainViewModel.ProgressPercent))
                 UpdateProgressRing(_vm.ProgressPercent);
         };
+
+        // المعاينة الحية — تحريك أي سلايدر يُعيد المعاينة تلقائيًا (بعد 300ms سكون)
+        _livePreviewTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+        _livePreviewTimer.Tick += (_, _) => { _livePreviewTimer.Stop(); _ = RunLivePreviewAsync(); };
+        _vm.PropertyChanged += VmLivePreview_PropertyChanged;
 
         UpdateRingGeometry(0);
         UpdatePrinterStatus(initial: true);
@@ -177,6 +200,61 @@ public partial class MainWindow : Window
         _vm.Log("🗑 صُفِّرت عدادات الاستهلاك.");
     }
 
+    /// <summary>زر تصفير الإعدادات السريعة — القيم ترجع 100% والمعاينة تتحدّث لايف تلقائيًا</summary>
+    private void ResetQuickAdjust_Click(object sender, RoutedEventArgs e)
+    {
+        _vm.ResetQuickAdjustments();
+        _vm.Log("↺ أُعيدت الإعدادات السريعة إلى 100%.");
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    //  المعاينة الحية — السلايدرز تُحدّث المعاينة فورًا
+    // ════════════════════════════════════════════════════════════════════
+
+    private void VmLivePreview_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is null || !LivePreviewTriggers.Contains(e.PropertyName)) return;
+        if (_vm.IsBusy) return;
+        if (string.IsNullOrEmpty(_vm.CurrentImagePath) || !File.Exists(_vm.CurrentImagePath)) return;
+
+        _livePreviewTimer?.Stop();
+        _livePreviewTimer?.Start();
+    }
+
+    /// <summary>إعادة تشغيل المعاينة بإعدادات اللحظة — مصغّرة للسرعة مع إلغاء أي تشغيل قديم</summary>
+    private async Task RunLivePreviewAsync()
+    {
+        if (_vm.IsBusy) return;
+        if (string.IsNullOrEmpty(_vm.CurrentImagePath) || !File.Exists(_vm.CurrentImagePath)) return;
+
+        _liveCts?.Cancel();
+        _liveCts = new CancellationTokenSource();
+        var token = _liveCts.Token;
+        int run = ++_liveRunId;
+
+        try
+        {
+            var imagePath = _vm.CurrentImagePath;
+            var settings  = _vm.BuildPipelineSettings();
+
+            var halftone = await Task.Run(() =>
+            {
+                var pipeline = new RipPipeline(settings);
+                return pipeline.PreviewHalftone(imagePath, previewMaxSide: 420);
+            }, token);
+
+            if (run != _liveRunId) return;   // جاء تحديث أحدث — تجاهل النتيجة القديمة
+
+            _lastHalftone = halftone;
+            UpdatePreview();
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            if (run == _liveRunId) _vm.Log($"⚠ المعاينة الحية توقفت: {ex.Message}");
+        }
+    }
+
     // ════════════════════════════════════════════════════════════════════
     //  🔌 تشخيص الاتصال (Stage 4)
     // ════════════════════════════════════════════════════════════════════
@@ -200,6 +278,7 @@ public partial class MainWindow : Window
                     {
                         PrinterStatusText.Text = $"الطابعة: جاهزة عبر {report.WorkingTransport}";
                         PrinterStatusDot.Fill = (Brush)FindResource("SuccessGreenBrush");
+                        RefreshPrinterStatusPanel();
                     }
                 });
             }
@@ -422,6 +501,46 @@ public partial class MainWindow : Window
                     : "الطابعة: غير متصلة";
 
                 if (found) _vm.Log($"🖨 اتصلت طابعة: {printers![0].Name}");
+            });
+        });
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    //  تاب حالات الطابعة — يفتح ويقفل، وبالفتح يفحص الوضع الحالي
+    // ════════════════════════════════════════════════════════════════════
+
+    private void PrinterStatusExpander_Expanded(object sender, RoutedEventArgs e)
+        => RefreshPrinterStatusPanel();
+
+    /// <summary>تحديث لوح حالات الطابعة داخل التاب + مزامنة الشريط العلوي عند الاتصال</summary>
+    private void RefreshPrinterStatusPanel()
+    {
+        Task.Run(() =>
+        {
+            DiscoveredPrinter[]? printers = null;
+            try { printers = UsbPrinterPort.DiscoverL1800(); } catch { /* بدون LibUsb */ }
+
+            Dispatcher.BeginInvoke(() =>
+            {
+                bool found = printers is { Length: > 0 };
+
+                PanelStatusDot.Fill = found
+                    ? (Brush)FindResource("SuccessGreenBrush")
+                    : (Brush)FindResource("TextMutedBrush");
+
+                PanelStatusText.Text  = found ? "الطابعة: متصلة ✓" : "الطابعة: غير متصلة";
+                PanelPrinterName.Text = found ? printers![0].ToString() : "لم تُكتشف طابعة على USB";
+                PanelTransport.Text   = found ? "LibUsb (WinUSB)" : "—";
+                PanelLastCheck.Text   = $"آخر فحص {DateTime.Now:HH:mm:ss}";
+
+                if (found)
+                {
+                    // مزامنة الشريط العلوي — لا ننزل الحالة لو سبق وأكد التشخيص اتصال
+                    PrinterStatusDot.Fill = (Brush)FindResource("SuccessGreenBrush");
+                    if (PrinterStatusText.Text == "الطابعة: غير متصلة")
+                        PrinterStatusText.Text = "الطابعة: متصلة ✓";
+                    _vm.Log($"🖨 اتصلت طابعة: {printers![0].Name}");
+                }
             });
         });
     }

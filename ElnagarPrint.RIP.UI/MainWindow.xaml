@@ -287,57 +287,64 @@
                             BorderBrush="{StaticResource BorderDarkBrush}"
                             BorderThickness="1" CornerRadius="10" Padding="16">
                         <StackPanel>
-                            <TextBlock Text="🎛  إعدادات سريعة" Style="{StaticResource SectionHeaderStyle}" Margin="0,0,0,12"/>
+                            <Grid Margin="0,0,0,10">
+                                <TextBlock Text="🎛  إعدادات سريعة" Style="{StaticResource SectionHeaderStyle}" Margin="0"/>
+                                <Button Content="↺ تصفير" Style="{StaticResource DarkButtonStyle}"
+                                        Padding="12,3" HorizontalAlignment="Left"
+                                        Click="ResetQuickAdjust_Click"
+                                        ToolTip="إرجاع الكثافة والسطوع والتباين والإشباع إلى 100%"/>
+                            </Grid>
 
                             <Grid Margin="0,3">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="96"/>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="58"/>
+                                    <ColumnDefinition Width="62"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="الكثافة" VerticalAlignment="Center" FontWeight="SemiBold"/>
                                 <Slider Grid.Column="1" Minimum="0" Maximum="2" Value="{Binding Density}"
                                         TickFrequency="0.05"/>
-                                <TextBlock Grid.Column="2" Text="{Binding Density, StringFormat={}{0:P0}}"
-                                           Foreground="{StaticResource GoldBrightBrush}" FontWeight="Bold"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBox Grid.Column="2" TextAlignment="Center" Padding="2,3" Margin="8,0,0,0"
+                                         Text="{Binding Density, StringFormat={}{0:F2}, UpdateSourceTrigger=PropertyChanged}"/>
                             </Grid>
                             <Grid Margin="0,3">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="96"/>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="58"/>
+                                    <ColumnDefinition Width="62"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="السطوع" VerticalAlignment="Center"/>
                                 <Slider Grid.Column="1" Minimum="0" Maximum="2" Value="{Binding Brightness}"
                                         TickFrequency="0.05"/>
-                                <TextBlock Grid.Column="2" Text="{Binding Brightness, StringFormat={}{0:P0}}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBox Grid.Column="2" TextAlignment="Center" Padding="2,3" Margin="8,0,0,0"
+                                         Text="{Binding Brightness, StringFormat={}{0:F2}, UpdateSourceTrigger=PropertyChanged}"/>
                             </Grid>
                             <Grid Margin="0,3">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="96"/>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="58"/>
+                                    <ColumnDefinition Width="62"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="التباين" VerticalAlignment="Center"/>
                                 <Slider Grid.Column="1" Minimum="0" Maximum="2" Value="{Binding Contrast}"
                                         TickFrequency="0.05"/>
-                                <TextBlock Grid.Column="2" Text="{Binding Contrast, StringFormat={}{0:P0}}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBox Grid.Column="2" TextAlignment="Center" Padding="2,3" Margin="8,0,0,0"
+                                         Text="{Binding Contrast, StringFormat={}{0:F2}, UpdateSourceTrigger=PropertyChanged}"/>
                             </Grid>
                             <Grid Margin="0,3">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="96"/>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="58"/>
+                                    <ColumnDefinition Width="62"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="الإشباع" VerticalAlignment="Center"/>
                                 <Slider Grid.Column="1" Minimum="0" Maximum="2" Value="{Binding Saturation}"
                                         TickFrequency="0.05"/>
-                                <TextBlock Grid.Column="2" Text="{Binding Saturation, StringFormat={}{0:P0}}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBox Grid.Column="2" TextAlignment="Center" Padding="2,3" Margin="8,0,0,0"
+                                         Text="{Binding Saturation, StringFormat={}{0:F2}, UpdateSourceTrigger=PropertyChanged}"/>
                             </Grid>
+                            <TextBlock Text="• أي تحريك للسلايدر يُحدّث المعاينة لايف"
+                                       FontSize="10.5" Foreground="{StaticResource TextMutedBrush}" Margin="0,6,0,0"/>
                         </StackPanel>
                     </Border>
 
@@ -363,8 +370,8 @@
                                 <Slider Grid.Column="2" Minimum="0" Maximum="100" Value="{Binding LcInkPercent}"
                                         TickFrequency="5" IsSnapToTickEnabled="True"
                                         IsEnabled="{Binding LockLightCyan, Converter={StaticResource InverseBoolConverter}}"/>
-                                <TextBlock Grid.Column="3" Text="{Binding LcInkPercent, StringFormat={}{0:P0}}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBox Grid.Column="3" TextAlignment="Center" Padding="2,3" Margin="8,0,0,0"
+                                         Text="{Binding LcInkPercent, StringFormat={}{0:F0}, UpdateSourceTrigger=PropertyChanged}"/>
                             </Grid>
                             <Grid Margin="0,3">
                                 <Grid.ColumnDefinitions>
@@ -381,8 +388,8 @@
                                 <Slider Grid.Column="2" Minimum="0" Maximum="100" Value="{Binding LmInkPercent}"
                                         TickFrequency="5" IsSnapToTickEnabled="True"
                                         IsEnabled="{Binding LockLightMagenta, Converter={StaticResource InverseBoolConverter}}"/>
-                                <TextBlock Grid.Column="3" Text="{Binding LmInkPercent, StringFormat={}{0:P0}}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBox Grid.Column="3" TextAlignment="Center" Padding="2,3" Margin="8,0,0,0"
+                                         Text="{Binding LmInkPercent, StringFormat={}{0:F0}, UpdateSourceTrigger=PropertyChanged}"/>
                             </Grid>
                         </StackPanel>
                     </Border>
@@ -516,6 +523,56 @@
                             <TextBlock Text="جاهز للطباعة" FontSize="16" FontWeight="Bold"
                                        Foreground="{StaticResource SuccessGreenBrush}" Margin="8,0,0,0"/>
                         </StackPanel>
+
+                        <!-- 🖨 حالات الطابعة — تاب يفتح ويقفل -->
+                        <Expander x:Name="PrinterStatusExpander" Margin="0,12,0,0"
+                                  Expanded="PrinterStatusExpander_Expanded">
+                            <Expander.Header>
+                                <TextBlock Text="🖨  حالات الطابعة" FontWeight="Bold"
+                                           Foreground="{StaticResource GoldAccentBrush}"/>
+                            </Expander.Header>
+                            <Border Background="#0A0A0A" BorderBrush="{StaticResource BorderDarkBrush}"
+                                    BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,6,0,0">
+                                <StackPanel>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Ellipse x:Name="PanelStatusDot" Width="10" Height="10"
+                                                     Fill="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="PanelStatusText" Text="الطابعة: غير متصلة"
+                                                       Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" x:Name="PanelLastCheck" Text="—"
+                                                   FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                                    </Grid>
+                                    <Separator Background="{StaticResource BorderDarkBrush}" Margin="0,6"/>
+                                    <Grid Margin="0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="الجهاز" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <TextBlock Grid.Column="1" x:Name="PanelPrinterName" Text="—"
+                                                   FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                    </Grid>
+                                    <Grid Margin="0,4,0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="النقل" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <TextBlock Grid.Column="1" x:Name="PanelTransport" Text="—"
+                                                   FontWeight="SemiBold"/>
+                                    </Grid>
+                                    <Button Content="🔌 تشخيص كامل" Style="{StaticResource DarkButtonStyle}"
+                                            Padding="12,3" HorizontalAlignment="Right" Margin="0,8,0,0"
+                                            Click="TestConnection_Click"/>
+                                </StackPanel>
+                            </Border>
+                        </Expander>
                     </StackPanel>
                 </Border>
             </Grid>
